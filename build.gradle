@@ -1,0 +1,68 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+group = 'com.lshdainty'
+version = '1.0.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+    withSourcesJar()
+    withJavadocJar()
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Spring Boot (provided - 사용하는 프로젝트에서 제공)
+    compileOnly 'org.springframework.boot:spring-boot-starter-web:4.0.0'
+    compileOnly 'org.springframework.boot:spring-boot-starter-data-jpa:4.0.0'
+    compileOnly 'org.springframework.boot:spring-boot-starter-validation:4.0.0'
+    compileOnly 'org.springframework.boot:spring-boot-starter-security:4.0.0'
+
+    // QueryDSL
+    compileOnly 'io.github.openfeign.querydsl:querydsl-jpa:7.1'
+
+    // Swagger/OpenAPI
+    compileOnly 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.0'
+
+    // P6Spy
+    compileOnly 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:2.0.0'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok:1.18.42'
+    annotationProcessor 'org.projectlombok:lombok:1.18.42'
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = 'porest-back-common'
+            from components.java
+
+            pom {
+                name = 'Porest Common'
+                description = 'Common utilities, exceptions, and configurations for Porest project'
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/lshdainty/porest-back-common")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR") ?: project.findProperty("gpr.user") ?: ""
+                password = System.getenv("GITHUB_TOKEN") ?: project.findProperty("gpr.key") ?: ""
+            }
+        }
+    }
+}
+
+tasks.withType(Javadoc).configureEach {
+    options.addStringOption('Xdoclint:none', '-quiet')
+}
