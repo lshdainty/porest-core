@@ -32,6 +32,9 @@ dependencies {
     // Spring Data (페이지네이션 지원)
     compileOnly 'org.springframework.data:spring-data-commons:4.0.2'
 
+    // Spring Data JPA (Auditing 지원)
+    compileOnly 'org.springframework.boot:spring-boot-starter-data-jpa:4.0.2'
+
     // Swagger/OpenAPI
     compileOnly 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1'
 
