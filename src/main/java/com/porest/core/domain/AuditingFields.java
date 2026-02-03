@@ -20,10 +20,10 @@ import java.time.LocalDateTime;
  *
  * <h3>기본 필드</h3>
  * <ul>
- *   <li>{@code createdAt} - 생성 일시</li>
- *   <li>{@code createdBy} - 생성자 ID</li>
- *   <li>{@code updatedAt} - 수정 일시</li>
- *   <li>{@code updatedBy} - 수정자 ID</li>
+ *   <li>{@code createAt} (create_at) - 생성 일시</li>
+ *   <li>{@code createBy} (create_by) - 생성자 ID</li>
+ *   <li>{@code modifyAt} (modify_at) - 수정 일시</li>
+ *   <li>{@code modifyBy} (modify_by) - 수정자 ID</li>
  * </ul>
  *
  * <h3>IP 필드 확장</h3>
@@ -111,8 +111,8 @@ public abstract class AuditingFields {
      * 이후 수정되지 않습니다.
      */
     @CreatedDate
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "create_at", nullable = false, updatable = false)
+    private LocalDateTime createAt;
 
     /**
      * 생성자 ID
@@ -121,8 +121,8 @@ public abstract class AuditingFields {
      * {@code AuditorAware} 구현체에서 현재 사용자 ID를 가져옵니다.
      */
     @CreatedBy
-    @Column(length = 50, updatable = false)
-    private String createdBy;
+    @Column(name = "create_by", length = 50, updatable = false)
+    private String createBy;
 
     /**
      * 수정 일시
@@ -130,8 +130,8 @@ public abstract class AuditingFields {
      * 엔티티가 수정될 때마다 자동으로 갱신됩니다.
      */
     @LastModifiedDate
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
+    @Column(name = "modify_at", nullable = false)
+    private LocalDateTime modifyAt;
 
     /**
      * 수정자 ID
@@ -140,6 +140,6 @@ public abstract class AuditingFields {
      * {@code AuditorAware} 구현체에서 현재 사용자 ID를 가져옵니다.
      */
     @LastModifiedBy
-    @Column(length = 50)
-    private String updatedBy;
+    @Column(name = "modify_by", length = 50)
+    private String modifyBy;
 }
