@@ -1,0 +1,382 @@
+package com.porest.core.util;
+
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+/**
+ * HTTP 요청 유틸리티
+ * <p>
+ * 현재 HTTP 요청에서 다양한 정보를 추출하는 유틸리티입니다.
+ * Spring의 {@link RequestContextHolder}를 통해 현재 요청에 접근합니다.
+ *
+ * <h3>주요 기능</h3>
+ * <ul>
+ *   <li>User-Agent 추출</li>
+ *   <li>Referer 추출</li>
+ *   <li>AJAX 요청 여부 확인</li>
+ *   <li>요청 URI/URL 추출</li>
+ *   <li>요청 파라미터 추출</li>
+ *   <li>헤더 값 추출</li>
+ * </ul>
+ *
+ * <h3>사용 예시</h3>
+ * <pre>{@code
+ * // User-Agent 확인
+ * String userAgent = HttpUtils.getUserAgent();
+ * if (userAgent != null && userAgent.contains("Mobile")) {
+ *     // 모바일 기기
+ * }
+ *
+ * // AJAX 요청 확인
+ * if (HttpUtils.isAjaxRequest()) {
+ *     // AJAX 요청 처리
+ * }
+ *
+ * // 현재 요청 URI
+ * String uri = HttpUtils.getRequestUri();
+ * log.info("Request URI: {}", uri);
+ *
+ * // 특정 헤더 값 추출
+ * String authHeader = HttpUtils.getHeader("Authorization");
+ * }</pre>
+ *
+ * <h3>참고사항</h3>
+ * <ul>
+ *   <li>웹 요청 컨텍스트가 없는 경우 null을 반환합니다.</li>
+ *   <li>배치 작업이나 비동기 스레드에서는 요청 정보를 가져올 수 없습니다.</li>
+ *   <li>IP 주소 추출은 {@link PorestIP}를 사용하세요.</li>
+ * </ul>
+ *
+ * @author porest
+ * @see PorestIP
+ */
+public final class HttpUtils {
+
+    private HttpUtils() {
+        // 유틸리티 클래스 인스턴스화 방지
+    }
+
+    /**
+     * 현재 HttpServletRequest 가져오기
+     *
+     * @return 현재 요청 객체, 요청 컨텍스트가 없으면 null
+     */
+    private static HttpServletRequest getCurrentRequest() {
+        ServletRequestAttributes attributes =
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        return attributes != null ? attributes.getRequest() : null;
+    }
+
+    // ========================================
+    // 헤더 정보
+    // ========================================
+
+    /**
+     * User-Agent 헤더 값 반환
+     * <p>
+     * 클라이언트의 브라우저/앱 정보를 반환합니다.
+     *
+     * <h4>사용 예시</h4>
+     * <pre>{@code
+     * String userAgent = HttpUtils.getUserAgent();
+     * // 결과: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ..."
+     *
+     * // 모바일 기기 확인
+     * if (userAgent != null && userAgent.toLowerCase().contains("mobile")) {
+     *     // 모바일 처리
+     * }
+     * }</pre>
+     *
+     * @return User-Agent 문자열, 없으면 null
+     */
+    public static String getUserAgent() {
+        HttpServletRequest request = getCurrentRequest();
+        return request != null ? request.getHeader("User-Agent") : null;
+    }
+
+    /**
+     * Referer 헤더 값 반환
+     * <p>
+     * 이전 페이지 URL을 반환합니다.
+     *
+     * <h4>사용 예시</h4>
+     * <pre>{@code
+     * String referer = HttpUtils.getReferer();
+     * log.info("이전 페이지: {}", referer);
+     * }</pre>
+     *
+     * @return Referer URL, 없으면 null
+     */
+    public static String getReferer() {
+        HttpServletRequest request = getCurrentRequest();
+        return request != null ? request.getHeader("Referer") : null;
+    }
+
+    /**
+     * 지정된 헤더 값 반환
+     *
+     * <h4>사용 예시</h4>
+     * <pre>{@code
+     * String authHeader = HttpUtils.getHeader("Authorization");
+     * String contentType = HttpUtils.getHeader("Content-Type");
+     * }</pre>
+     *
+     * @param headerName 헤더 이름
+     * @return 헤더 값, 없으면 null
+     */
+    public static String getHeader(String headerName) {
+        HttpServletRequest request = getCurrentRequest();
+        return request != null ? request.getHeader(headerName) : null;
+    }
+
+    /**
+     * Accept-Language 헤더 값 반환
+     * <p>
+     * 클라이언트가 선호하는 언어를 반환합니다.
+     *
+     * @return Accept-Language 값, 없으면 null
+     */
+    public static String getAcceptLanguage() {
+        return getHeader("Accept-Language");
+    }
+
+    /**
+     * Content-Type 헤더 값 반환
+     *
+     * @return Content-Type 값, 없으면 null
+     */
+    public static String getContentType() {
+        HttpServletRequest request = getCurrentRequest();
+        return request != null ? request.getContentType() : null;
+    }
+
+    // ========================================
+    // 요청 정보
+    // ========================================
+
+    /**
+     * 요청 URI 반환
+     * <p>
+     * 쿼리 스트링을 제외한 요청 경로를 반환합니다.
+     *
+     * <h4>사용 예시</h4>
+     * <pre>{@code
+     * String uri = HttpUtils.getRequestUri();
+     * // 결과: "/api/v1/users"
+     * }</pre>
+     *
+     * @return 요청 URI, 요청이 없으면 null
+     */
+    public static String getRequestUri() {
+        HttpServletRequest request = getCurrentRequest();
+        return request != null ? request.getRequestURI() : null;
+    }
+
+    /**
+     * 전체 요청 URL 반환
+     * <p>
+     * 쿼리 스트링을 포함한 전체 URL을 반환합니다.
+     *
+     * <h4>사용 예시</h4>
+     * <pre>{@code
+     * String url = HttpUtils.getRequestUrl();
+     * // 결과: "https://example.com/api/v1/users?page=1"
+     * }</pre>
+     *
+     * @return 전체 요청 URL, 요청이 없으면 null
+     */
+    public static String getRequestUrl() {
+        HttpServletRequest request = getCurrentRequest();
+        if (request == null) {
+            return null;
+        }
+
+        StringBuffer url = request.getRequestURL();
+        String queryString = request.getQueryString();
+
+        if (queryString != null && !queryString.isEmpty()) {
+            url.append("?").append(queryString);
+        }
+
+        return url.toString();
+    }
+
+    /**
+     * HTTP 메서드 반환
+     *
+     * <h4>사용 예시</h4>
+     * <pre>{@code
+     * String method = HttpUtils.getMethod();
+     * // 결과: "GET", "POST", "PUT", "DELETE" 등
+     * }</pre>
+     *
+     * @return HTTP 메서드, 요청이 없으면 null
+     */
+    public static String getMethod() {
+        HttpServletRequest request = getCurrentRequest();
+        return request != null ? request.getMethod() : null;
+    }
+
+    /**
+     * 쿼리 스트링 반환
+     *
+     * <h4>사용 예시</h4>
+     * <pre>{@code
+     * String query = HttpUtils.getQueryString();
+     * // 결과: "page=1&size=20"
+     * }</pre>
+     *
+     * @return 쿼리 스트링, 없으면 null
+     */
+    public static String getQueryString() {
+        HttpServletRequest request = getCurrentRequest();
+        return request != null ? request.getQueryString() : null;
+    }
+
+    /**
+     * 요청 파라미터 값 반환
+     *
+     * <h4>사용 예시</h4>
+     * <pre>{@code
+     * String page = HttpUtils.getParameter("page");
+     * String keyword = HttpUtils.getParameter("keyword");
+     * }</pre>
+     *
+     * @param name 파라미터 이름
+     * @return 파라미터 값, 없으면 null
+     */
+    public static String getParameter(String name) {
+        HttpServletRequest request = getCurrentRequest();
+        return request != null ? request.getParameter(name) : null;
+    }
+
+    // ========================================
+    // 요청 유형 확인
+    // ========================================
+
+    /**
+     * AJAX 요청 여부 확인
+     * <p>
+     * X-Requested-With 헤더가 "XMLHttpRequest"인지 확인합니다.
+     *
+     * <h4>사용 예시</h4>
+     * <pre>{@code
+     * if (HttpUtils.isAjaxRequest()) {
+     *     // AJAX 요청 - JSON 응답
+     * } else {
+     *     // 일반 요청 - 페이지 리다이렉트
+     * }
+     * }</pre>
+     *
+     * @return AJAX 요청이면 true
+     */
+    public static boolean isAjaxRequest() {
+        String requestedWith = getHeader("X-Requested-With");
+        return "XMLHttpRequest".equalsIgnoreCase(requestedWith);
+    }
+
+    /**
+     * JSON 요청 여부 확인
+     * <p>
+     * Content-Type이 application/json인지 확인합니다.
+     *
+     * @return JSON 요청이면 true
+     */
+    public static boolean isJsonRequest() {
+        String contentType = getContentType();
+        return contentType != null && contentType.contains("application/json");
+    }
+
+    /**
+     * 멀티파트 요청 여부 확인
+     * <p>
+     * 파일 업로드 요청인지 확인합니다.
+     *
+     * @return 멀티파트 요청이면 true
+     */
+    public static boolean isMultipartRequest() {
+        String contentType = getContentType();
+        return contentType != null && contentType.contains("multipart/form-data");
+    }
+
+    /**
+     * HTTPS 요청 여부 확인
+     *
+     * @return HTTPS 요청이면 true
+     */
+    public static boolean isSecure() {
+        HttpServletRequest request = getCurrentRequest();
+        if (request == null) {
+            return false;
+        }
+
+        // 직접 HTTPS인 경우
+        if (request.isSecure()) {
+            return true;
+        }
+
+        // 프록시/로드밸런서 뒤에 있는 경우
+        String forwardedProto = request.getHeader("X-Forwarded-Proto");
+        return "https".equalsIgnoreCase(forwardedProto);
+    }
+
+    // ========================================
+    // 기타
+    // ========================================
+
+    /**
+     * 세션 ID 반환
+     * <p>
+     * 현재 세션의 ID를 반환합니다. 세션이 없으면 null을 반환합니다.
+     *
+     * @return 세션 ID, 세션이 없으면 null
+     */
+    public static String getSessionId() {
+        HttpServletRequest request = getCurrentRequest();
+        if (request == null || request.getSession(false) == null) {
+            return null;
+        }
+        return request.getSession().getId();
+    }
+
+    /**
+     * 컨텍스트 경로 반환
+     * <p>
+     * 애플리케이션의 컨텍스트 경로를 반환합니다.
+     *
+     * <h4>사용 예시</h4>
+     * <pre>{@code
+     * String contextPath = HttpUtils.getContextPath();
+     * // 결과: "" 또는 "/myapp"
+     * }</pre>
+     *
+     * @return 컨텍스트 경로
+     */
+    public static String getContextPath() {
+        HttpServletRequest request = getCurrentRequest();
+        return request != null ? request.getContextPath() : "";
+    }
+
+    /**
+     * 서버 이름 반환
+     * <p>
+     * 요청을 받은 서버의 호스트 이름을 반환합니다.
+     *
+     * @return 서버 이름
+     */
+    public static String getServerName() {
+        HttpServletRequest request = getCurrentRequest();
+        return request != null ? request.getServerName() : null;
+    }
+
+    /**
+     * 서버 포트 반환
+     *
+     * @return 서버 포트, 요청이 없으면 -1
+     */
+    public static int getServerPort() {
+        HttpServletRequest request = getCurrentRequest();
+        return request != null ? request.getServerPort() : -1;
+    }
+}

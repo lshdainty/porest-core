@@ -20,12 +20,17 @@ repositories {
 
 dependencies {
     // Spring Boot (provided - 사용하는 프로젝트에서 제공)
-    compileOnly 'org.springframework.boot:spring-boot-starter-web:4.0.0'
-    compileOnly 'org.springframework.boot:spring-boot-starter-validation:4.0.0'
-    compileOnly 'org.springframework.boot:spring-boot-starter-security:4.0.0'
+    compileOnly 'org.springframework.boot:spring-boot-starter-web:3.4.1'
+    compileOnly 'org.springframework.boot:spring-boot-starter-validation:3.4.1'
+    compileOnly 'org.springframework.boot:spring-boot-starter-security:3.4.1'
+    compileOnly 'org.springframework.boot:spring-boot-starter-aop:3.4.1'
+
+    // Jackson (JSON 처리)
+    compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.18.2'
+    compileOnly 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.2'
 
     // Spring Data (페이지네이션 지원)
-    compileOnly 'org.springframework.data:spring-data-commons:4.0.0'
+    compileOnly 'org.springframework.data:spring-data-commons:3.4.1'
 
     // Swagger/OpenAPI
     compileOnly 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.0'
