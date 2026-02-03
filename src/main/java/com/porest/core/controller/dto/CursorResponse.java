@@ -29,30 +29,6 @@ import java.util.function.Function;
  * }
  * }</pre>
  *
- * <h3>프론트엔드 연동 예시</h3>
- * <pre>{@code
- * // JavaScript
- * let cursor = null;
- *
- * async function loadMessages() {
- *     const url = cursor
- *         ? `/api/messages?cursor=${cursor}&size=20`
- *         : '/api/messages?size=20';
- *
- *     const response = await fetch(url);
- *     const data = await response.json();
- *
- *     appendToList(data.content);
- *
- *     if (data.meta.hasNext) {
- *         cursor = data.meta.nextCursor;
- *         showLoadMoreButton();
- *     } else {
- *         hideLoadMoreButton();
- *     }
- * }
- * }</pre>
- *
  * <h3>Repository에서 size + 1 조회 패턴</h3>
  * <pre>{@code
  * // Repository: limit을 size + 1로 조회

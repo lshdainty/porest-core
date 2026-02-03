@@ -59,24 +59,6 @@ import java.util.function.Function;
  * }
  * }</pre>
  *
- * <h3>프론트엔드 무한 스크롤 연동</h3>
- * <pre>{@code
- * // JavaScript 예시
- * async function loadMore() {
- *     const response = await fetch(`/api/feeds?page=${currentPage}&size=20`);
- *     const data = await response.json();
- *
- *     appendToList(data.content);
- *
- *     if (data.meta.hasNext) {
- *         currentPage++;
- *         showLoadMoreButton();
- *     } else {
- *         hideLoadMoreButton();
- *     }
- * }
- * }</pre>
- *
  * @param <T> 데이터 타입
  * @author porest
  * @see PageResponse

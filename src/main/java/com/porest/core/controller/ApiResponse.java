@@ -124,41 +124,6 @@ import lombok.Getter;
  * }
  * }</pre>
  *
- * <h3>프론트엔드 연동 예시</h3>
- * <pre>{@code
- * // JavaScript/TypeScript
- * interface ApiResponse<T> {
- *   success: boolean;
- *   code: string;
- *   message: string;
- *   data: T | null;
- * }
- *
- * async function fetchUser(id: number): Promise<User> {
- *   const response = await fetch(`/api/v1/users/${id}`);
- *   const result: ApiResponse<User> = await response.json();
- *
- *   if (result.success) {
- *     return result.data!;
- *   } else {
- *     // 에러 처리
- *     throw new Error(result.message);
- *   }
- * }
- *
- * // Axios 인터셉터 예시
- * axios.interceptors.response.use(
- *   (response) => {
- *     const apiResponse = response.data as ApiResponse<any>;
- *     if (!apiResponse.success) {
- *       return Promise.reject(new Error(apiResponse.message));
- *     }
- *     return response;
- *   },
- *   (error) => Promise.reject(error)
- * );
- * }</pre>
- *
  * @param <T> 응답 데이터 타입
  * @author porest
  * @see GlobalExceptionHandler
