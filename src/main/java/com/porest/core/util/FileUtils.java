@@ -12,6 +12,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
@@ -822,6 +824,122 @@ public final class FileUtils {
                     e
             );
         }
+    }
+
+    // ========================================
+    // 파일 해시/체크섬
+    // ========================================
+
+    /**
+     * 파일 해시 계산
+     * <p>
+     * 지정된 알고리즘으로 파일의 해시값을 계산합니다.
+     * 스트림 기반으로 대용량 파일도 메모리 효율적으로 처리합니다.
+     *
+     * <h4>지원 알고리즘</h4>
+     * <ul>
+     *   <li>SHA-256 (권장)</li>
+     *   <li>SHA-512</li>
+     *   <li>MD5 (체크섬 용도만)</li>
+     * </ul>
+     *
+     * <h4>사용 예시</h4>
+     * <pre>{@code
+     * // SHA-256 해시 계산
+     * String hash = FileUtils.calculateHash("/files/document.pdf", "SHA-256");
+     *
+     * // 파일 무결성 검증
+     * String expectedHash = "abc123...";
+     * if (hash.equals(expectedHash)) {
+     *     // 파일 무결성 확인됨
+     * }
+     * }</pre>
+     *
+     * @param path      파일 경로
+     * @param algorithm 해시 알고리즘 (SHA-256, SHA-512, MD5)
+     * @return 16진수 해시 문자열
+     * @throws ResourceNotFoundException 파일이 존재하지 않는 경우
+     * @throws ExternalServiceException  해시 계산 중 오류 발생 시
+     */
+    public static String calculateHash(String path, String algorithm) {
+        return withInputStream(path, is -> {
+            try {
+                MessageDigest digest = MessageDigest.getInstance(algorithm);
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = is.read(buffer)) != -1) {
+                    digest.update(buffer, 0, bytesRead);
+                }
+                return bytesToHex(digest.digest());
+            } catch (NoSuchAlgorithmException e) {
+                throw new IllegalArgumentException("Unsupported algorithm: " + algorithm, e);
+            } catch (IOException e) {
+                throw new ExternalServiceException(
+                        ErrorCode.INTERNAL_SERVER_ERROR,
+                        "Failed to read file for hashing: " + path,
+                        e
+                );
+            }
+        });
+    }
+
+    /**
+     * SHA-256 해시 계산 (편의 메서드)
+     * <p>
+     * 파일의 SHA-256 해시값을 계산합니다. 파일 무결성 검증에 권장됩니다.
+     *
+     * <h4>사용 예시</h4>
+     * <pre>{@code
+     * String hash = FileUtils.calculateSha256("/files/document.pdf");
+     * // 결과: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+     * }</pre>
+     *
+     * @param path 파일 경로
+     * @return SHA-256 해시 문자열 (64자리 16진수)
+     * @throws ResourceNotFoundException 파일이 존재하지 않는 경우
+     * @throws ExternalServiceException  해시 계산 중 오류 발생 시
+     */
+    public static String calculateSha256(String path) {
+        return calculateHash(path, "SHA-256");
+    }
+
+    /**
+     * MD5 해시 계산 (체크섬 용도)
+     * <p>
+     * 파일의 MD5 해시값을 계산합니다.
+     * 보안 목적에는 적합하지 않으며, 단순 체크섬 비교 용도로만 사용하세요.
+     *
+     * <h4>사용 예시</h4>
+     * <pre>{@code
+     * String checksum = FileUtils.calculateMd5("/files/archive.zip");
+     * // 결과: "d41d8cd98f00b204e9800998ecf8427e"
+     * }</pre>
+     *
+     * @param path 파일 경로
+     * @return MD5 해시 문자열 (32자리 16진수)
+     * @throws ResourceNotFoundException 파일이 존재하지 않는 경우
+     * @throws ExternalServiceException  해시 계산 중 오류 발생 시
+     */
+    public static String calculateMd5(String path) {
+        return calculateHash(path, "MD5");
+    }
+
+    /**
+     * 바이트 배열을 16진수 문자열로 변환
+     *
+     * @param bytes 바이트 배열
+     * @return 16진수 문자열 (소문자)
+     */
+    private static String bytesToHex(byte[] bytes) {
+        StringBuilder hexString = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) {
+            String hex = Integer.toHexString(0xff & b);
+            if (hex.length() == 1) {
+                hexString.append('0');
+            }
+            hexString.append(hex);
+        }
+        return hexString.toString();
     }
 
     /**

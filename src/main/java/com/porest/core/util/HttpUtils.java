@@ -4,6 +4,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * HTTP 요청 유틸리티
  * <p>
@@ -359,6 +363,61 @@ public final class HttpUtils {
     public static String getParameter(String name) {
         HttpServletRequest request = getCurrentRequest();
         return request != null ? request.getParameter(name) : null;
+    }
+
+    /**
+     * 모든 요청 파라미터를 Map으로 반환
+     * <p>
+     * 현재 HTTP 요청의 모든 쿼리 파라미터와 폼 파라미터를 Map으로 반환합니다.
+     * 동일한 이름의 파라미터가 여러 개인 경우 배열로 반환됩니다.
+     *
+     * <h4>사용 예시</h4>
+     * <pre>{@code
+     * // GET /api/search?keyword=test&category=A&category=B
+     * Map<String, String[]> params = HttpUtils.getParameterMap();
+     * // params = {"keyword": ["test"], "category": ["A", "B"]}
+     *
+     * String[] categories = params.get("category");
+     * // categories = ["A", "B"]
+     * }</pre>
+     *
+     * @return 파라미터 Map, 요청이 없으면 빈 Map
+     */
+    public static Map<String, String[]> getParameterMap() {
+        HttpServletRequest request = getCurrentRequest();
+        if (request == null) {
+            return Collections.emptyMap();
+        }
+        return request.getParameterMap();
+    }
+
+    /**
+     * 모든 요청 파라미터를 단일값 Map으로 반환
+     * <p>
+     * 동일한 이름의 파라미터가 여러 개인 경우 첫 번째 값만 반환됩니다.
+     *
+     * <h4>사용 예시</h4>
+     * <pre>{@code
+     * // GET /api/users?page=1&size=20&sort=name
+     * Map<String, String> params = HttpUtils.getParameterMapSingleValue();
+     * // params = {"page": "1", "size": "20", "sort": "name"}
+     * }</pre>
+     *
+     * @return 파라미터 Map (단일값), 요청이 없으면 빈 Map
+     */
+    public static Map<String, String> getParameterMapSingleValue() {
+        HttpServletRequest request = getCurrentRequest();
+        if (request == null) {
+            return Collections.emptyMap();
+        }
+
+        Map<String, String> result = new HashMap<>();
+        request.getParameterMap().forEach((key, values) -> {
+            if (values != null && values.length > 0) {
+                result.put(key, values[0]);
+            }
+        });
+        return result;
     }
 
     // ========================================
