@@ -1,11 +1,11 @@
 package com.porest.core.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -60,29 +60,18 @@ public final class JsonUtils {
     private static final ObjectMapper PRETTY_OBJECT_MAPPER;
 
     static {
-        OBJECT_MAPPER = createObjectMapper();
-        PRETTY_OBJECT_MAPPER = createObjectMapper();
-        PRETTY_OBJECT_MAPPER.enable(SerializationFeature.INDENT_OUTPUT);
+        OBJECT_MAPPER = JsonMapper.builder()
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .build();
+
+        PRETTY_OBJECT_MAPPER = JsonMapper.builder()
+                .enable(SerializationFeature.INDENT_OUTPUT)
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .build();
     }
 
     private JsonUtils() {
         // 유틸리티 클래스 인스턴스화 방지
-    }
-
-    /**
-     * ObjectMapper 생성 및 설정
-     */
-    private static ObjectMapper createObjectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-
-        // Java 8 날짜/시간 타입 지원
-        mapper.registerModule(new JavaTimeModule());
-        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-
-        // 알 수 없는 프로퍼티 무시
-        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-
-        return mapper;
     }
 
     /**
@@ -107,7 +96,7 @@ public final class JsonUtils {
 
         try {
             return OBJECT_MAPPER.writeValueAsString(object);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.warn("Failed to convert object to JSON: {}", e.getMessage());
             return null;
         }
@@ -140,7 +129,7 @@ public final class JsonUtils {
 
         try {
             return PRETTY_OBJECT_MAPPER.writeValueAsString(object);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.warn("Failed to convert object to pretty JSON: {}", e.getMessage());
             return null;
         }
@@ -169,7 +158,7 @@ public final class JsonUtils {
 
         try {
             return OBJECT_MAPPER.readValue(json, clazz);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.warn("Failed to convert JSON to object: {}", e.getMessage());
             return null;
         }
@@ -203,7 +192,7 @@ public final class JsonUtils {
 
         try {
             return OBJECT_MAPPER.readValue(json, typeReference);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.warn("Failed to convert JSON to object: {}", e.getMessage());
             return null;
         }
@@ -266,7 +255,7 @@ public final class JsonUtils {
         try {
             OBJECT_MAPPER.readTree(json);
             return true;
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             return false;
         }
     }

@@ -3,6 +3,8 @@ package com.porest.core.controller;
 import com.porest.core.exception.ErrorCode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * API 공통 응답 포맷
@@ -187,7 +189,12 @@ public class ApiResponse<T> {
      * @param message 응답 메시지
      * @param data    응답 데이터
      */
-    private ApiResponse(boolean success, String code, String message, T data) {
+    @JsonCreator
+    private ApiResponse(
+            @JsonProperty("success") boolean success,
+            @JsonProperty("code") String code,
+            @JsonProperty("message") String message,
+            @JsonProperty("data") T data) {
         this.success = success;
         this.code = code;
         this.message = message;
