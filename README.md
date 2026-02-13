@@ -37,7 +37,6 @@
 | 패키지 | 설명 |
 |--------|------|
 | `config.web` | Locale 설정 |
-| `config.openapi` | Swagger/OpenAPI 설정 |
 | `config.properties` | Security Properties |
 | `PasswordEncoderConfig` | BCrypt 비밀번호 인코더 |
 
@@ -67,10 +66,10 @@
 
 | 타입 | 설명 |
 |------|------|
-| `CompanyType` | 회사 타입 인터페이스 |
-| `SystemType` | 시스템 타입 인터페이스 |
 | `DisplayType` | 화면 표시 타입 인터페이스 |
 | `CountryCode` | 국가 코드 |
+| `Environment` | 실행 환경 타입 |
+| `SortDirection` | 정렬 방향 타입 |
 | `YNType` | Y/N 타입 |
 
 ### Utility
@@ -106,7 +105,6 @@
 src/main/java/com/porest/core/
 ├── config/
 │   ├── web/                 # Locale 설정
-│   ├── openapi/             # Swagger 설정
 │   ├── properties/          # Security Properties
 │   └── PasswordEncoderConfig.java
 ├── constant/                # 상수 정의
@@ -127,10 +125,10 @@ src/main/java/com/porest/core/
 ├── security/
 │   └── AuditorPrincipal.java
 ├── type/
-│   ├── CompanyType.java
-│   ├── SystemType.java
 │   ├── DisplayType.java
 │   ├── CountryCode.java
+│   ├── Environment.java
+│   ├── SortDirection.java
 │   └── YNType.java
 ├── util/
 │   ├── MessageResolver.java
@@ -231,7 +229,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.porest:porest-core:2.0.0'
+    implementation 'com.porest:porest-core:2.0.1'
 }
 ```
 
