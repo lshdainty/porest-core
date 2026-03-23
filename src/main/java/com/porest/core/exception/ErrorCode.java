@@ -56,6 +56,8 @@ public enum ErrorCode implements ErrorCodeProvider {
     // FILE (파일)
     // ========================================
     FILE_NOT_FOUND("FILE_001", "error.file.notfound", HttpStatus.NOT_FOUND),
+    FILE_INVALID_TYPE("FILE_002", "error.file.invalid.type", HttpStatus.BAD_REQUEST),
+    FILE_TOO_LARGE("FILE_003", "error.file.too.large", HttpStatus.BAD_REQUEST),
 
     ;
 

@@ -48,6 +48,8 @@ public enum MessageKey {
     FILE_COPY("error.file.copy"),
     FILE_MOVE("error.file.move"),
     FILE_SAVE_ERROR("error.file.save"),
+    FILE_INVALID_TYPE("error.file.invalid.type"),
+    FILE_TOO_LARGE("error.file.too.large"),
 
     // ========================================
     // COMMON (공통)
