@@ -16,6 +16,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -489,6 +490,38 @@ public class GlobalExceptionHandler {
                 ErrorCode.INVALID_INPUT.getCode(),
                 errorMessage
         );
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(response);
+    }
+
+    /**
+     * MissingServletRequestParameterException 처리 (필수 요청 파라미터 누락)
+     * <p>
+     * 필수 {@code @RequestParam} 이 요청에 누락된 경우 발생합니다.
+     * 클라이언트 요청 오류이므로 HTTP 400 (Bad Request) 상태 코드를 반환합니다.
+     * <p>
+     * 이 핸들러가 없으면 최종 fallback {@code Exception} 핸들러에서 500으로 잘못 처리되므로
+     * 명시적으로 400 으로 응답합니다.
+     *
+     * <h4>발생 예시</h4>
+     * <pre>{@code
+     * @GetMapping("/search")
+     * public ApiResponse<List<UserDto>> search(@RequestParam String keyword) {
+     *     // GET /search (keyword 누락) 요청 시 발생
+     * }
+     * }</pre>
+     *
+     * @param e MissingServletRequestParameterException 예외
+     * @return 400 에러 응답
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
+        log.warn("MissingServletRequestParameterException: parameter={}", e.getParameterName());
+
+        String message = messageResolver.getMessage(MessageKey.COMMON_MISSING_PARAMETER, e.getParameterName());
+        ApiResponse<Void> response = ApiResponse.error(ErrorCode.INVALID_INPUT.getCode(), message);
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
