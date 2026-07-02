@@ -60,6 +60,7 @@ public enum MessageKey {
     COMMON_FORBIDDEN("error.common.forbidden"),
     COMMON_NOT_FOUND("error.common.not.found"),
     COMMON_404("error.common.404"),
+    COMMON_MISSING_PARAMETER("error.common.missing.parameter"),
     COMMON_INTERNAL_SERVER("error.common.internal.server"),
 
     ;
