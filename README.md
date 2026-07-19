@@ -9,6 +9,7 @@
 </p>
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Version-2.0.3-blue" alt="Version" />
   <img src="https://img.shields.io/badge/Java-25-007396?logo=openjdk&logoColor=white" alt="Java" />
   <img src="https://img.shields.io/badge/Spring%20Boot-4.0-6DB33F?logo=springboot&logoColor=white" alt="Spring Boot" />
   <img src="https://img.shields.io/badge/GitHub_Packages-181717?logo=github&logoColor=white" alt="GitHub Packages" />
@@ -20,7 +21,9 @@
 
 **porest-core**는 [POREST](https://github.com/lshdainty/POREST) 백엔드 프로젝트에서 공통으로 사용되는 라이브러리입니다.
 
-예외 처리, 국제화(i18n), API 응답 포맷, JPA Auditing, 공통 설정 등 프로젝트 전반에서 사용되는 컴포넌트를 제공합니다.
+예외 처리, 국제화(i18n), API 응답 포맷, JPA Auditing, 페이지네이션, 검증 어노테이션, 로깅 AOP 등 프로젝트 전반에서 사용되는 컴포넌트를 제공합니다.
+
+현재 **porest-desk-back**, **porest-hr-back**, **porest-sso-back**에서 사용 중입니다. (porest-skc-back 미사용)
 
 ---
 
@@ -34,11 +37,17 @@
 
 ### Configuration
 
-| 패키지 | 설명 |
+| 클래스 | 설명 |
 |--------|------|
-| `config.web` | Locale 설정 |
-| `config.properties` | Security Properties |
+| `LocaleConfig` | Locale 설정 (`?lang=` 파라미터 > Accept-Language 헤더 > 기본 ko, ko/en 지원) |
+| `SecurityProperties` | 보안 설정 프로퍼티 (IP 블랙리스트 등) |
 | `PasswordEncoderConfig` | BCrypt 비밀번호 인코더 |
+
+### Constant
+
+| 클래스 | 설명 |
+|--------|------|
+| `CoreConstants` | 공통 상수 (날짜 포맷, 페이지네이션 기본값 등) |
 
 ### Controller
 
@@ -46,12 +55,16 @@
 |--------|------|
 | `ApiResponse` | 통일된 API 응답 포맷 |
 | `GlobalExceptionHandler` | 전역 예외 처리 |
-| `PageRequest` / `CursorRequest` | 페이지네이션 요청 DTO |
+| `PageRequest` / `PageResponse` | 오프셋 기반 페이지네이션 DTO |
+| `CursorRequest` / `CursorResponse` | 커서 기반 페이지네이션 DTO |
+| `SliceResponse` | Slice 기반 페이지네이션 응답 DTO (무한 스크롤용) |
 
 ### Exception
 
 | 클래스 | HTTP Status | 설명 |
 |--------|-------------|------|
+| `ErrorCode` | - | Core 공통 에러 코드 enum |
+| `ErrorCodeProvider` | - | 에러 코드 공통 인터페이스 (도메인별 ErrorCode가 구현) |
 | `BusinessException` | - | 비즈니스 예외 기본 클래스 |
 | `EntityNotFoundException` | 404 | 엔티티 조회 실패 |
 | `ResourceNotFoundException` | 404 | 리소스 조회 실패 |
@@ -79,11 +92,29 @@
 | `MessageResolver` | 다국어 메시지 조회 |
 | `TimeUtils` | 날짜/시간 유틸리티 |
 | `FileUtils` | 파일 처리 (저장, 읽기, 해시 계산 등) |
+| `FileUploadValidator` | 파일 업로드 보안 검증 (확장자, 크기, MIME 타입) |
 | `HttpUtils` | HTTP 요청 유틸리티 (IP, 헤더, 파라미터 등) |
 | `CryptoUtils` | 암호화 유틸리티 |
 | `JsonUtils` | JSON 변환 유틸리티 |
 | `MaskUtils` | 마스킹 유틸리티 |
 | `RegexPatterns` | 정규식 패턴 |
+
+### Validation
+
+| 어노테이션 | 설명 |
+|------------|------|
+| `@DateRange` | 날짜 범위 검증 (시작일 ≤ 종료일) |
+| `@EnumValue` | Enum 값 검증 |
+| `@Password` | 비밀번호 규칙 검증 (BASIC/STRONG) |
+| `@Phone` | 전화번호 형식 검증 |
+
+### Logging
+
+| 클래스 | 설명 |
+|--------|------|
+| `@LogExecutionTime` | 메서드 실행 시간 로깅 어노테이션 |
+| `@LogMethodCall` | 메서드 호출(진입/종료) 로깅 어노테이션 |
+| `LoggingAspect` | 위 어노테이션을 처리하는 AOP Aspect |
 
 ### Security
 
@@ -95,51 +126,61 @@
 
 | 클래스 | 설명 |
 |--------|------|
-| `MessageKey` | 다국어 메시지 키 enum |
+| `MessageKey` | Core 공통 다국어 메시지 키 enum |
+
+> **다국어 정책**: core에는 공통 메시지 키(`MessageKey`)와 core 공통 메시지(`core-messages*.properties`)만 포함합니다.
+> 도메인별 메시지 키와 메시지 본문은 각 프로젝트의 MessageKey enum과 message properties에서 관리합니다.
 
 ---
 
 ## 프로젝트 구조
 
 ```
-src/main/java/com/porest/core/
-├── config/
-│   ├── web/                 # Locale 설정
-│   ├── properties/          # Security Properties
-│   └── PasswordEncoderConfig.java
-├── constant/                # 상수 정의
-├── controller/
-│   ├── dto/                 # PageRequest, CursorRequest
-│   ├── ApiResponse.java
-│   └── GlobalExceptionHandler.java
-├── domain/
-│   └── AuditingFields.java  # JPA Auditing 기본 필드
-├── exception/
-│   ├── ErrorCode.java
-│   ├── ErrorCodeProvider.java
-│   ├── BusinessException.java
-│   └── ...
-├── logging/                 # 로깅 AOP
-├── message/
-│   └── MessageKey.java
-├── security/
-│   └── AuditorPrincipal.java
-├── type/
-│   ├── DisplayType.java
-│   ├── CountryCode.java
-│   ├── Environment.java
-│   ├── SortDirection.java
-│   └── YNType.java
-├── util/
-│   ├── MessageResolver.java
-│   ├── TimeUtils.java
-│   ├── FileUtils.java
-│   ├── HttpUtils.java
-│   ├── CryptoUtils.java
-│   ├── JsonUtils.java
-│   ├── MaskUtils.java
-│   └── RegexPatterns.java
-└── validation/              # 검증 유틸리티
+src/main/
+├── java/com/porest/core/
+│   ├── config/
+│   │   ├── web/                 # LocaleConfig
+│   │   ├── properties/          # SecurityProperties
+│   │   └── PasswordEncoderConfig.java
+│   ├── constant/
+│   │   └── CoreConstants.java
+│   ├── controller/
+│   │   ├── dto/                 # PageRequest/Response, CursorRequest/Response, SliceResponse
+│   │   ├── ApiResponse.java
+│   │   └── GlobalExceptionHandler.java
+│   ├── domain/
+│   │   └── AuditingFields.java  # JPA Auditing 기본 필드
+│   ├── exception/
+│   │   ├── ErrorCode.java
+│   │   ├── ErrorCodeProvider.java
+│   │   ├── BusinessException.java
+│   │   └── ...
+│   ├── logging/                 # LogExecutionTime, LogMethodCall, LoggingAspect
+│   ├── message/
+│   │   └── MessageKey.java
+│   ├── security/
+│   │   └── AuditorPrincipal.java
+│   ├── type/
+│   │   ├── DisplayType.java
+│   │   ├── CountryCode.java
+│   │   ├── Environment.java
+│   │   ├── SortDirection.java
+│   │   └── YNType.java
+│   ├── util/
+│   │   ├── MessageResolver.java
+│   │   ├── TimeUtils.java
+│   │   ├── FileUtils.java
+│   │   ├── FileUploadValidator.java
+│   │   ├── HttpUtils.java
+│   │   ├── CryptoUtils.java
+│   │   ├── JsonUtils.java
+│   │   ├── MaskUtils.java
+│   │   └── RegexPatterns.java
+│   └── validation/
+│       ├── annotation/          # DateRange, EnumValue, Password, Phone
+│       └── validator/           # 각 어노테이션의 Validator
+└── resources/
+    └── message/                 # core-messages.properties (+_ko, _en)
 ```
 
 ---
@@ -190,7 +231,7 @@ public abstract class AuditingFieldsWithIp extends AuditingFields {
 User user = userRepository.findById(id)
     .orElseThrow(() -> new EntityNotFoundException(ErrorCode.NOT_FOUND));
 
-// 비즈니스 규칙 위반
+// 비즈니스 규칙 위반 (도메인별 ErrorCode는 ErrorCodeProvider 구현)
 if (vacation.getBalance() < requestedDays) {
     throw new BusinessRuleViolationException(HrErrorCode.VACATION_INSUFFICIENT);
 }
@@ -201,6 +242,9 @@ if (vacation.getBalance() < requestedDays) {
 ```java
 // 파일 해시 계산
 String hash = FileUtils.calculateSha256("/files/document.pdf");
+
+// 파일 업로드 검증
+FileUploadValidator.validate(file, allowedExtensions, maxSizeBytes);
 
 // HTTP 요청 정보
 String clientIp = HttpUtils.getClientIp();
@@ -229,9 +273,29 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.porest:porest-core:2.0.1'
+    implementation 'com.porest:porest-core:2.0.3'
 }
 ```
+
+---
+
+## 배포
+
+GitHub Packages로 배포합니다. CI 배포는 없으며 **수동으로 `gradle publish`를 실행**합니다.
+
+```bash
+# ~/.gradle/gradle.properties 에 인증 정보 필요
+# gpr.user=<GitHub 사용자명>
+# gpr.key=<write:packages 권한 토큰>
+
+./gradlew publish
+```
+
+버전업 절차:
+
+1. `build.gradle`의 `version` 수정
+2. `./gradlew publish` 실행
+3. 사용 프로젝트(desk-back, hr-back, sso-back)의 `build.gradle` 의존성 버전 갱신
 
 ---
 
@@ -240,6 +304,7 @@ dependencies {
 | Repository | Description |
 |------------|-------------|
 | [POREST](https://github.com/lshdainty/POREST) | 통합 레포지토리 (서비스 소개) |
+| [porest-desk-back](https://github.com/lshdainty/porest-desk-back) | Desk 백엔드 |
 | [porest-hr-back](https://github.com/lshdainty/porest-hr-back) | HR 백엔드 |
 | [porest-hr-front](https://github.com/lshdainty/porest-hr-front) | HR 프론트엔드 |
 | [porest-sso-back](https://github.com/lshdainty/porest-sso-back) | SSO 백엔드 |
