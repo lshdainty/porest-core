@@ -5,11 +5,14 @@ import com.porest.core.exception.InvalidValueException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.DateTimeException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Period;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
@@ -108,6 +111,117 @@ public final class TimeUtils {
     }
 
     // ========================================
+    // 타임존 변환
+    // ========================================
+    //
+    // 서버(컨테이너)와 DB 는 UTC 로 돌고, 사용자에게 보이는 시각만 사용자 타임존으로 바꾼다.
+    // 두 종류의 시각을 절대 섞지 말 것:
+    //
+    //   [UTC]        시스템이 찍는 절대 시각 (create_at·modify_at·sent_at·granted_at …).
+    //                저장·비교 모두 UTC. 화면에 낼 때만 toUserZone() 으로 바꾼다.
+    //   [userClock]  사용자가 의미를 정하는 벽시계 (거래일·이체일·마감일 …).
+    //                이미 사용자 로컬 값이므로 변환하지 않는다 — 변환하면 자정 근처 날짜가 하루 밀린다.
+    //
+    // LocalDateTime 은 타임존 정보를 갖지 않으므로, 어느 쪽 기준인지는 컬럼 COMMENT 와
+    // 필드 주석의 표기([UTC] / [userClock])로만 구분된다.
+
+    /**
+     * UTC 로 저장된 시각을 사용자 타임존 벽시계로 변환한다. 화면 표시용.
+     *
+     * <p>{@code utc} 가 null 이면 null 을 돌려준다. {@code zoneId} 가 null·빈 값·해석 불가면
+     * {@code fallbackZone} 을 쓰고, 그마저 없으면 UTC 로 둔다(값을 잃지 않는 쪽으로).
+     *
+     * @param utc          UTC 기준 시각 ([UTC] 컬럼에서 읽은 값)
+     * @param zoneId       사용자 타임존 (예: {@code "Asia/Seoul"})
+     * @param fallbackZone zoneId 해석 실패 시 대체 타임존 (null 허용)
+     * @return 사용자 타임존 벽시계
+     */
+    public static LocalDateTime toUserZone(LocalDateTime utc, String zoneId, ZoneId fallbackZone) {
+        if (utc == null) {
+            return null;
+        }
+        ZoneId target = resolveZone(zoneId, fallbackZone);
+        return utc.atZone(ZoneOffset.UTC).withZoneSameInstant(target).toLocalDateTime();
+    }
+
+    /**
+     * UTC → 사용자 타임존 변환 (폴백 없음 — 해석 실패 시 UTC 유지).
+     */
+    public static LocalDateTime toUserZone(LocalDateTime utc, String zoneId) {
+        return toUserZone(utc, zoneId, null);
+    }
+
+    /**
+     * 사용자 타임존 벽시계를 UTC 로 되돌린다. 사용자 입력을 [UTC] 컬럼에 저장할 때 쓴다.
+     *
+     * <p>주의: [userClock] 컬럼(거래일 등)에는 쓰지 말 것 — 그 컬럼은 벽시계 그대로 저장한다.
+     *
+     * @param userLocal    사용자 타임존 기준 벽시계
+     * @param zoneId       사용자 타임존
+     * @param fallbackZone zoneId 해석 실패 시 대체 타임존 (null 허용)
+     * @return UTC 기준 시각
+     */
+    public static LocalDateTime toUtc(LocalDateTime userLocal, String zoneId, ZoneId fallbackZone) {
+        if (userLocal == null) {
+            return null;
+        }
+        ZoneId source = resolveZone(zoneId, fallbackZone);
+        return userLocal.atZone(source).withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+    }
+
+    /**
+     * 사용자 타임존 벽시계 → UTC (폴백 없음 — 해석 실패 시 UTC 로 간주해 그대로 둔다).
+     */
+    public static LocalDateTime toUtc(LocalDateTime userLocal, String zoneId) {
+        return toUtc(userLocal, zoneId, null);
+    }
+
+    /**
+     * 사용자 타임존 기준 "오늘".
+     *
+     * <p>{@link #today()} 는 JVM 기본 타임존을 타므로 컨테이너(UTC)에서는 한국 사용자에게
+     * 오전 9시 전까지 하루 전 날짜를 준다. 사용자 화면의 "오늘"은 반드시 이 메서드를 쓴다.
+     *
+     * @param zoneId       사용자 타임존
+     * @param fallbackZone zoneId 해석 실패 시 대체 타임존 (null 허용)
+     */
+    public static LocalDate todayIn(String zoneId, ZoneId fallbackZone) {
+        return LocalDate.now(resolveZone(zoneId, fallbackZone));
+    }
+
+    /**
+     * 사용자 타임존 기준 "지금".
+     *
+     * @param zoneId       사용자 타임존
+     * @param fallbackZone zoneId 해석 실패 시 대체 타임존 (null 허용)
+     */
+    public static LocalDateTime nowIn(String zoneId, ZoneId fallbackZone) {
+        return LocalDateTime.now(resolveZone(zoneId, fallbackZone));
+    }
+
+    /**
+     * 타임존 문자열을 {@link ZoneId} 로 해석한다.
+     *
+     * <p>사용자 설정값이 깨져 있어도 화면이 죽으면 안 되므로 예외를 던지지 않고
+     * {@code fallbackZone} → UTC 순으로 폴백한다.
+     *
+     * @param zoneId       타임존 문자열 (예: {@code "Asia/Seoul"}), null·빈 값 허용
+     * @param fallbackZone 해석 실패 시 대체 타임존 (null 이면 UTC)
+     */
+    public static ZoneId resolveZone(String zoneId, ZoneId fallbackZone) {
+        ZoneId fallback = fallbackZone != null ? fallbackZone : ZoneOffset.UTC;
+        if (zoneId == null || zoneId.isBlank()) {
+            return fallback;
+        }
+        try {
+            return ZoneId.of(zoneId.trim());
+        } catch (DateTimeException e) {
+            log.warn("알 수 없는 타임존 '{}' — {} 로 폴백", zoneId, fallback);
+            return fallback;
+        }
+    }
+
+    // ========================================
     // 현재 시간
     // ========================================
 
@@ -115,7 +229,10 @@ public final class TimeUtils {
      * 현재 날짜 반환
      *
      * @return 오늘 날짜
+     * @deprecated JVM 기본 타임존을 타므로 컨테이너(UTC)에서 사용자 기준 "오늘"과 어긋난다.
+     *             사용자 화면용은 {@link #todayIn(String, ZoneId)} 를 쓸 것.
      */
+    @Deprecated(since = "2.1.0")
     public static LocalDate today() {
         return LocalDate.now();
     }
@@ -124,7 +241,10 @@ public final class TimeUtils {
      * 현재 날짜/시간 반환
      *
      * @return 현재 날짜/시간
+     * @deprecated JVM 기본 타임존을 타므로 컨테이너(UTC)에서 사용자 기준 "지금"과 어긋난다.
+     *             사용자 화면용은 {@link #nowIn(String, ZoneId)} 를 쓸 것.
      */
+    @Deprecated(since = "2.1.0")
     public static LocalDateTime now() {
         return LocalDateTime.now();
     }
@@ -133,7 +253,9 @@ public final class TimeUtils {
      * 어제 날짜 반환
      *
      * @return 어제 날짜
+     * @deprecated {@link #todayIn(String, ZoneId)}{@code .minusDays(1)} 를 쓸 것.
      */
+    @Deprecated(since = "2.1.0")
     public static LocalDate yesterday() {
         return LocalDate.now().minusDays(1);
     }
@@ -142,7 +264,9 @@ public final class TimeUtils {
      * 내일 날짜 반환
      *
      * @return 내일 날짜
+     * @deprecated {@link #todayIn(String, ZoneId)}{@code .plusDays(1)} 를 쓸 것.
      */
+    @Deprecated(since = "2.1.0")
     public static LocalDate tomorrow() {
         return LocalDate.now().plusDays(1);
     }
