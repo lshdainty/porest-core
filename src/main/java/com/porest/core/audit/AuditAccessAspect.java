@@ -96,11 +96,17 @@ public class AuditAccessAspect {
         }
     }
 
+    /** Spring Security 가 미인증 요청에 넣는 익명 주체 이름. */
+    private static final String ANONYMOUS_USER = "anonymousUser";
+
     /**
      * 수행자 계정 추출
      * <p>
      * {@link AuditorPrincipal} 을 구현한 principal 이면 그 값을 쓰고, 아니면
-     * {@code Authentication.getName()} 으로 되돌아갑니다. 인증 정보가 없으면 null 입니다.
+     * {@code Authentication.getName()} 으로 되돌아갑니다. 인증 정보가 없거나 익명이면 null 입니다.
+     * <p>
+     * 익명을 걸러내는 이유: Spring Security 는 미인증 요청에도 {@code isAuthenticated()==true}
+     * 인 익명 토큰을 넣기 때문에, 그대로 두면 계정 칸에 {@code "anonymousUser"} 가 쌓입니다.
      */
     private String resolveActorId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -111,6 +117,10 @@ public class AuditAccessAspect {
         Object principal = authentication.getPrincipal();
         if (principal instanceof AuditorPrincipal auditorPrincipal) {
             return auditorPrincipal.getUserId();
+        }
+
+        if (ANONYMOUS_USER.equals(principal) || ANONYMOUS_USER.equals(authentication.getName())) {
+            return null;
         }
 
         return authentication.getName();
