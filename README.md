@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-2.0.3-blue" alt="Version" />
+  <img src="https://img.shields.io/badge/Version-2.4.0-blue" alt="Version" />
   <img src="https://img.shields.io/badge/Java-25-007396?logo=openjdk&logoColor=white" alt="Java" />
   <img src="https://img.shields.io/badge/Spring%20Boot-4.0-6DB33F?logo=springboot&logoColor=white" alt="Spring Boot" />
   <img src="https://img.shields.io/badge/GitHub_Packages-181717?logo=github&logoColor=white" alt="GitHub Packages" />
@@ -115,6 +115,24 @@
 | `@LogExecutionTime` | 메서드 실행 시간 로깅 어노테이션 |
 | `@LogMethodCall` | 메서드 호출(진입/종료) 로깅 어노테이션 |
 | `LoggingAspect` | 위 어노테이션을 처리하는 AOP Aspect |
+| `SensitiveDataMasker` | 로그 문자열의 민감값 마스킹 (비밀번호·시크릿·토큰·인가코드·JWT) |
+
+> **`SensitiveDataMasker`** — 요청/응답 로깅 필터가 로그를 찍기 **직전**에 부르는 순수 문자열 함수다.
+> 원본 요청·응답은 건드리지 않고 항상 새 문자열을 돌려주며, 어떤 입력에도 예외를 던지지 않는다.
+>
+> ```java
+> // 기본 규칙만
+> String safe = SensitiveDataMasker.mask(body);
+>
+> // 서비스 고유 키를 더할 때는 필터에서 static final 로 한 번 만들어 재사용한다
+> private static final SensitiveDataMasker MASKER =
+>         SensitiveDataMasker.withExtraKeys("clientId", "client_id");
+> ```
+>
+> 키 비교는 정규화(소문자 + `_ - .` 제거) 후 완전일치라 `apiKey` · `api_key` · `API-KEY` 가 같은 키다.
+> `code` 처럼 같은 이름이 상태코드와 OAuth 인가코드를 동시에 뜻하는 키는 **값이 43자 이상 base64url 일 때만**
+> 가린다. `client_id` · `state` · `n` · `kid` · `codeChallenge` 는 공개 정보라 **일부러 안 가린다**
+> (자세한 이유는 클래스 Javadoc 에 있다).
 
 ### Security
 
@@ -155,7 +173,7 @@ src/main/
 │   │   ├── ErrorCodeProvider.java
 │   │   ├── BusinessException.java
 │   │   └── ...
-│   ├── logging/                 # LogExecutionTime, LogMethodCall, LoggingAspect
+│   ├── logging/                 # LogExecutionTime, LogMethodCall, LoggingAspect, SensitiveDataMasker
 │   ├── message/
 │   │   └── MessageKey.java
 │   ├── security/
@@ -273,7 +291,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.porest:porest-core:2.0.3'
+    implementation 'com.porest:porest-core:2.4.0'
 }
 ```
 
