@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.porest'
-version = '2.3.1'
+version = '2.4.0'
 
 java {
     toolchain {
@@ -46,6 +46,15 @@ dependencies {
     // Lombok
     compileOnly 'org.projectlombok:lombok:1.18.42'
     annotationProcessor 'org.projectlombok:lombok:1.18.42'
+
+    // 테스트 (published pom 에는 들어가지 않는다 — from components.java 는 api/implementation 만 싣는다)
+    testImplementation 'org.junit.jupiter:junit-jupiter:6.0.3'
+    testImplementation 'org.assertj:assertj-core:3.27.7'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:6.0.3'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
 }
 
 publishing {
